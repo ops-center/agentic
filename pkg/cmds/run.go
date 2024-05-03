@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"os"
 
+	monitoringv1alpha1 "go.opscenter.dev/inbox-agent/apis/monitoring/v1alpha1"
 	monitoringcontroller "go.opscenter.dev/inbox-agent/pkg/controller/monitoring"
 
 	"github.com/spf13/cobra"
@@ -47,7 +48,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(appsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(monitoringv1alpha1.AddToScheme(scheme))
 }
 
 func NewCmdRun() *cobra.Command {
