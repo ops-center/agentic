@@ -14,3 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package cmds
+
+import (
+	"github.com/spf13/cobra"
+	v "gomodules.xyz/x/version"
+)
+
+func NewRootCmd() *cobra.Command {
+	rootCmd := &cobra.Command{
+		Use:               "sidekick [command]",
+		Short:             `Kubernetes Sidekick Operator by AppsCode`,
+		DisableAutoGenTag: true,
+	}
+
+	rootCmd.AddCommand(v.NewCmdVersion())
+	rootCmd.AddCommand(NewCmdRun())
+
+	return rootCmd
+}

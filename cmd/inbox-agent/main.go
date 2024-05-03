@@ -14,3 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package main
+
+import (
+	"kubeops.dev/petset/pkg/cmds"
+
+	"gomodules.xyz/logs"
+	_ "k8s.io/client-go/kubernetes/fake"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
+)
+
+func main() {
+	if err := realMain(); err != nil {
+		klog.Warningln(err)
+	}
+}
+
+func realMain() error {
+	rootCmd := cmds.NewRootCmd()
+	logs.Init(rootCmd, true)
+	defer logs.FlushLogs()
+
+	return rootCmd.Execute()
+}

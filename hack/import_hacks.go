@@ -14,3 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+package hack
+
+import (
+	_ "k8s.io/apimachinery/pkg/api/resource"
+	_ "k8s.io/apimachinery/pkg/apis/meta/v1"
+	_ "k8s.io/apimachinery/pkg/runtime"
+	_ "k8s.io/apimachinery/pkg/runtime/schema"
+	_ "k8s.io/apimachinery/pkg/util/intstr"
+)
