@@ -15,6 +15,6 @@ resources:
   domain: appscode.com
   group: monitoring
   kind: Runbook
-  path: go.opscenter.dev/inbox-agent/api/monitoring/v1alpha1
+  path: go.opscenter.dev/inbox-agent/apis/monitoring/v1alpha1
   version: v1alpha1
 version: "3"

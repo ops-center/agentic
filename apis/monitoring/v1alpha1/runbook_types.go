@@ -18,19 +18,37 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // RunbookSpec defines the desired state of Runbook
 type RunbookSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	DiagnosticChecks []DiagnosticCheck `json:"diagnosticChecks,omitempty"`
 
-	// Foo is an example field of Runbook. Edit runbook_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	RemedyActions []RemedyAction `json:"remedyActions"`
 }
+
+type DiagnosticCheck struct {
+	Type DiagnosticCheckType   `json:"type"`
+	Args *runtime.RawExtension `json:"args"`
+}
+
+type DiagnosticCheckType string
+
+const (
+	CollectLog DiagnosticCheckType = "CollectLog"
+)
+
+type RemedyAction struct {
+	Type RemedyActionType      `json:"type"`
+	Args *runtime.RawExtension `json:"args"`
+}
+
+type RemedyActionType string
+
+const (
+	RestartPod RemedyActionType = "RestartPod"
+)
 
 // RunbookStatus defines the observed state of Runbook
 type RunbookStatus struct {

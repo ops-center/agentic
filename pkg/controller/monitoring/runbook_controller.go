@@ -19,12 +19,12 @@ package monitoring
 import (
 	"context"
 
+	monitoringv1alpha1 "go.opscenter.dev/inbox-agent/apis/monitoring/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	monitoringv1alpha1 "go.opscenter.dev/inbox-agent/api/monitoring/v1alpha1"
 )
 
 // RunbookReconciler reconciles a Runbook object

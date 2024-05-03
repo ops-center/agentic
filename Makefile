@@ -56,7 +56,7 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := api cmd crds pkg # directories which hold app source excluding tests (not vendored)
+SRC_PKGS := apis cmd crds pkg # directories which hold app source excluding tests (not vendored)
 SRC_DIRS := $(SRC_PKGS) # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm64
@@ -204,7 +204,7 @@ gen-crds:
 manifests: gen-crds
 
 .PHONY: gen
-gen: clientset manifests openapi
+gen: manifests openapi
 
 fmt: $(BUILD_DIRS)
 	@docker run                                                 \
