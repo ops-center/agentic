@@ -1,0 +1,9 @@
+apiVersion: monitoring.appscode.com/v1alpha1
+kind: Runbook
+metadata:
+  labels:
+    app.kubernetes.io/name: inbox-agent
+    app.kubernetes.io/managed-by: kustomize
+  name: runbook-sample
+spec:
+  # TODO(user): Add fields here

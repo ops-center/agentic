@@ -1,0 +1,27 @@
+# permissions for end users to edit runbooks.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: inbox-agent
+    app.kubernetes.io/managed-by: kustomize
+  name: monitoring-runbook-editor-role
+rules:
+- apiGroups:
+  - monitoring.appscode.com
+  resources:
+  - runbooks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.appscode.com
+  resources:
+  - runbooks/status
+  verbs:
+  - get
