@@ -23,8 +23,8 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:               "sidekick [command]",
-		Short:             `Kubernetes Sidekick Operator by AppsCode`,
+		Use:               "inbox-agent [command]",
+		Short:             `Kubernetes Inbox Agent by AppsCode`,
 		DisableAutoGenTag: true,
 	}
 

@@ -27,7 +27,7 @@ import (
 
 func main() {
 	if err := realMain(); err != nil {
-		klog.Warningln(err)
+		klog.Fatalln(err)
 	}
 }
 

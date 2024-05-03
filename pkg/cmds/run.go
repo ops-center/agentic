@@ -64,7 +64,7 @@ func NewCmdRun() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "run",
-		Short:             "Launch Sidekick Operator",
+		Short:             "Launch Inbox Angent",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			klog.Infof("Starting binary version %s+%s ...", v.Version.Version, v.Version.CommitHash)
