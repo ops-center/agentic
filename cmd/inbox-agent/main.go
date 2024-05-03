@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"kubeops.dev/petset/pkg/cmds"
+	"go.opscenter.dev/inbox-agent/pkg/cmds"
 
 	"gomodules.xyz/logs"
 	_ "k8s.io/client-go/kubernetes/fake"

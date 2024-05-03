@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	monitoringv1alpha1 "go.opscenter.dev/inbox-agent/api/monitoring/v1alpha1"
-	monitoringcontroller "go.opscenter.dev/inbox-agent/internal/controller/monitoring"
+	monitoringcontroller "go.opscenter.dev/inbox-agent/pkg/controller/monitoring"
 	//+kubebuilder:scaffold:imports
 )
 

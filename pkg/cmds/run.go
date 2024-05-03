@@ -19,8 +19,8 @@ package cmds
 import (
 	"os"
 
-	appsv1alpha1 "kubeops.dev/sidekick/apis/apps/v1alpha1"
-	appscontrollers "kubeops.dev/sidekick/pkg/controllers/apps"
+	appsv1alpha1 "go.opscenter.dev/inbox-agent/api/monitoring/v1alpha1"
+	appscontrollers "go.opscenter.dev/inbox-agent/pkg/controllers/monitoring"
 
 	"github.com/spf13/cobra"
 	v "gomodules.xyz/x/version"
