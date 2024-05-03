@@ -15,18 +15,18 @@
 SHELL=/bin/bash -o pipefail
 
 PRODUCT_OWNER_NAME := appscode
-PRODUCT_NAME       := petset
+PRODUCT_NAME       := inbox-agent
 ENFORCE_LICENSE    ?=
 
-GO_PKG   := kubeops.dev
+GO_PKG   := go.opscenter.dev
 REPO     := $(notdir $(shell pwd))
-BIN      := petset
+BIN      := inbox-agent
 COMPRESS ?= no
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS          ?= "crd:crdVersions={v1},allowDangerousTypes=true,generateEmbeddedObjectMeta=true"
+CRD_OPTIONS          ?= "crd:crdVersions={v1},allowDangerousTypes=true"
 CODE_GENERATOR_IMAGE ?= ghcr.io/appscode/gengo:release-1.29
-API_GROUPS           ?= apps:v1
+API_GROUPS           ?= monitoring:v1alpha1
 
 # Where to push the docker image.
 REGISTRY ?= ghcr.io/appscode
@@ -56,7 +56,7 @@ endif
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := apis client cmd pkg # directories which hold app source excluding tests (not vendored)
+SRC_PKGS := api cmd crds pkg # directories which hold app source excluding tests (not vendored)
 SRC_DIRS := $(SRC_PKGS) # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm64
@@ -66,7 +66,7 @@ BIN_PLATFORMS    := $(DOCKER_PLATFORMS)
 OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-# BASEIMAGE_PROD   ?= gcr.io/distroless/static-debian12
+# BASEIMAGE_PROD ?= gcr.io/distroless/static-debian12
 BASEIMAGE_PROD   ?= alpine
 BASEIMAGE_DBG    ?= debian:bookworm
 
@@ -81,9 +81,10 @@ GO_VERSION       ?= 1.22
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
 CHART_TEST_IMAGE ?= quay.io/helmpack/chart-testing:v3.5.1
 
-OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
+OUTBIN = bin/$(BIN)-$(OS)-$(ARCH)
 ifeq ($(OS),windows)
-  OUTBIN = bin/$(OS)_$(ARCH)/$(BIN).exe
+  OUTBIN := bin/$(BIN)-$(OS)-$(ARCH).exe
+  BIN := $(BIN).exe
 endif
 
 # Directories that we need created to build/test.
@@ -127,6 +128,10 @@ push-%:
 	    GOARCH=$(lastword $(subst _, ,$*))
 
 all-build: $(addprefix build-, $(subst /,_, $(BIN_PLATFORMS)))
+ifeq ($(COMPRESS),yes)
+	@cd bin; \
+	sha256sum $(patsubst $(BIN)-windows-%.tar.gz,$(BIN)-windows-%.zip, $(addsuffix .tar.gz, $(addprefix $(BIN)-, $(subst /,-, $(BIN_PLATFORMS))))) > $(BIN)-checksums.txt
+endif
 
 all-container: $(addprefix container-, $(subst /,_, $(DOCKER_PLATFORMS)))
 
@@ -144,7 +149,6 @@ version:
 .PHONY: clientset
 clientset:
 	@docker run --rm                                            \
-		-u $$(id -u):$$(id -g)                                    \
 		-v /tmp:/.cache                                           \
 		-v $$(pwd):$(DOCKER_REPO_ROOT)                            \
 		-w $(DOCKER_REPO_ROOT)                                    \
@@ -152,12 +156,11 @@ clientset:
 		--env HTTPS_PROXY=$(HTTPS_PROXY)                          \
 		$(CODE_GENERATOR_IMAGE)                                   \
 		/go/src/k8s.io/code-generator/generate-groups.sh          \
-			"client,deepcopy,informer,lister"                       \
+			"deepcopy,client"                                       \
 			$(GO_PKG)/$(REPO)/client                                \
 			$(GO_PKG)/$(REPO)/apis                                  \
 			"$(API_GROUPS)"                                         \
 			--go-header-file "./hack/license/go.txt"
-
 
 # Generate openapi schema
 .PHONY: openapi
@@ -201,7 +204,7 @@ gen-crds:
 manifests: gen-crds
 
 .PHONY: gen
-gen: clientset manifests # openapi
+gen: clientset manifests openapi
 
 fmt: $(BUILD_DIRS)
 	@docker run                                                 \
@@ -260,26 +263,21 @@ $(OUTBIN): .go/$(OUTBIN).stamp
 	        commit_timestamp=$(commit_timestamp)                \
 	        ./hack/build.sh                                     \
 	    "
-	@if [ $(COMPRESS) = yes ] && [ $(OS) != darwin ]; then          \
-		echo "compressing $(OUTBIN)";                               \
-		@docker run                                                 \
-		    -i                                                      \
-		    --rm                                                    \
-		    -u $$(id -u):$$(id -g)                                  \
-		    -v $$(pwd):/src                                         \
-		    -w /src                                                 \
-		    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin                \
-		    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin/$(OS)_$(ARCH)  \
-		    -v $$(pwd)/.go/cache:/.cache                            \
-		    --env HTTP_PROXY=$(HTTP_PROXY)                          \
-		    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
-		    $(BUILD_IMAGE)                                          \
-		    upx --brute /go/$(OUTBIN);                              \
+	@if ! cmp -s .go/bin/$(OS)_$(ARCH)/$(BIN) $(OUTBIN); then   \
+	    mv .go/bin/$(OS)_$(ARCH)/$(BIN) $(OUTBIN);              \
+	    date >$@;                                               \
 	fi
-	@if ! cmp -s .go/$(OUTBIN) $(OUTBIN); then \
-	    mv .go/$(OUTBIN) $(OUTBIN);            \
-	    date >$@;                              \
-	fi
+ifeq ($(COMPRESS),yes)
+ifeq ($(OS),windows)
+	@echo "compressing $(OUTBIN)";                               \
+	cd bin;                                                      \
+	zip -j $(subst .exe,,$(BIN))-$(OS)-$(ARCH).zip $(subst .exe,,$(BIN))-$(OS)-$(ARCH).exe ../LICENSE
+else
+	@echo "compressing $(OUTBIN)";                               \
+	cd bin;                                                      \
+	tar -czvf $(BIN)-$(OS)-$(ARCH).tar.gz $(BIN)-$(OS)-$(ARCH) ../LICENSE
+endif
+endif
 	@echo
 
 # Used to track state in hidden files.
@@ -287,7 +285,7 @@ DOTFILE_IMAGE    = $(subst /,_,$(IMAGE))-$(TAG)
 
 container: bin/.container-$(DOTFILE_IMAGE)-PROD bin/.container-$(DOTFILE_IMAGE)-DBG
 ifeq (,$(SRC_REG))
-bin/.container-$(DOTFILE_IMAGE)-%: bin/$(OS)_$(ARCH)/$(BIN) $(DOCKERFILE_%)
+bin/.container-$(DOTFILE_IMAGE)-%: bin/$(BIN)-$(OS)-$(ARCH) $(DOCKERFILE_%)
 	@echo "container: $(IMAGE):$(TAG_$*)"
 	@sed                                    \
 		-e 's|{ARG_BIN}|$(BIN)|g'           \
@@ -424,22 +422,19 @@ endif
 install:
 	@cd ../installer; \
 	kubectl create ns $(KUBE_NAMESPACE) || true; \
-#	kubectl label ns $(KUBE_NAMESPACE) pod-security.kubernetes.io/enforce=restricted; \
-	helm upgrade -i petset charts/petset --wait --debug --force \
+	kubectl label ns $(KUBE_NAMESPACE) pod-security.kubernetes.io/enforce=restricted; \
+	helm upgrade -i inbox-agent charts/inbox-agent --wait \
 		--namespace=$(KUBE_NAMESPACE) --create-namespace \
 		--set registryFQDN="" \
-		--set operator.registry=$(REGISTRY) \
-		--set operator.tag=$(TAG_PROD) \
-		--set operator.securityContext.seccompProfile.type=RuntimeDefault \
-		--set rbacproxy.registry=ghcr.io/appscode \
-		--set rbacproxy.securityContext.seccompProfile.type=RuntimeDefault \
+		--set image.registry=$(REGISTRY) \
+		--set image.tag=$(TAG_PROD) \
 		--set imagePullPolicy=$(IMAGE_PULL_POLICY) \
 		$(IMAGE_PULL_SECRETS);
 
 .PHONY: uninstall
 uninstall:
 	@cd ../installer; \
-	helm uninstall petset --namespace=$(KUBE_NAMESPACE) || true
+	helm uninstall inbox-agent --namespace=$(KUBE_NAMESPACE) || true
 
 .PHONY: purge
 purge: uninstall
@@ -504,7 +499,7 @@ qa:
 		echo "Are you trying to 'release' binaries to prod?"; \
 		exit 1;                                               \
 	fi
-	@$(MAKE) clean all-push docker-manifest --no-print-directory
+	@$(MAKE) all-push docker-manifest --no-print-directory
 
 .PHONY: release
 release:
@@ -516,7 +511,7 @@ release:
 		echo "apply tag to release binaries and/or docker images."; \
 		exit 1;                                                     \
 	fi
-	@$(MAKE) clean all-push docker-manifest --no-print-directory
+	@$(MAKE) all-push docker-manifest --no-print-directory
 
 .PHONY: clean
 clean:
@@ -524,7 +519,7 @@ clean:
 
 .PHONY: run
 run:
-	go run -mod=vendor ./cmd/petset run \
+	go run -mod=vendor ./cmd/inbox-agent run \
 		--v=3 \
 		--secure-port=8443 \
 		--kubeconfig=$(KUBECONFIG) \
